@@ -195,14 +195,15 @@ class ContributionForm extends Component {
         Number(contribution.policy?.value - contribution.policy?.sumPremiums) ||
       (contribution?.id && contribution?.policy?.product?.maxInstallments === 1)
     )
-      return false;
+      return true;
 
     if (
       !contribution ||
       (contribution &&
-        (!contribution.payDate ||
+        (
+          // !contribution.payDate ||
           !contribution.payType ||
-          !contribution.amount ||
+          // !contribution.amount ||
           !contribution.receipt ||
           !contribution.policy ||
           contribution.validityTo ||

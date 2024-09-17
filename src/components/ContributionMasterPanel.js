@@ -5,6 +5,9 @@ import { injectIntl } from "react-intl";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import { Grid } from "@material-ui/core";
 
+// AUTOGENERATE RECEIPT NUMBER
+import { fetchNewReceiptNumber } from '../services/receiptService';
+
 import {
   withHistory,
   withModulesManager,
@@ -37,6 +40,38 @@ class ContributionMasterPanel extends FormPanel {
     const shouldValidate = inputValue !== savedCode;
     return shouldValidate;
   };
+
+
+  state = {
+    receiptNumber: "",
+    payDate: new Date(), // Setting current date as the default value
+  };
+
+  // AUTOGENERATION OF RECEIPTS IS HERE
+  componentDidMount() {
+    this.handleFetchReceiptNumber();
+    // this.initializeForm();
+  }
+
+  handleFetchReceiptNumber = async () => {
+    try {
+        const newReceiptNumber = await fetchNewReceiptNumber();
+        // console.log(newReceiptNumber);
+        this.setState({ receiptNumber: newReceiptNumber });
+        this.updateAttribute('receipt', newReceiptNumber);
+    } catch (error) {
+        console.error("Error fetching receipt number:", error);
+    }
+  };
+
+  // initializeForm = () => {
+  //   const { payDate, receiptNumber } = this.state;
+  //   console.log("Initializing Form with Receipt Number:", receiptNumber); // Debug Log
+  //   this.updateAttribute('payDate', payDate);
+  //   this.updateAttribute('receiptNumber', receiptNumber);
+  // };
+
+  // AUTOGENERATION FUNCTION ENDS HERE AND IS APPLIED ON THE GRID OF RECEIPT BELOW
 
   renderWarning = () => {
     const { intl, edited } = this.props;
@@ -79,6 +114,10 @@ class ContributionMasterPanel extends FormPanel {
   };
 
   render() {
+    const { payDate } = this.state; //AUTO UPDATE DATE OF CONTRIBUTION TO TODAYS DATE
+    // console.log(payDate);
+    const { receiptNumber } = this.state;
+    // console.log(receiptNumber);
     const {
       intl,
       classes,
@@ -180,6 +219,7 @@ class ContributionMasterPanel extends FormPanel {
           <Grid item xs={3} className={classes.item}>
             <PublishedComponent
               pubRef='core.DatePicker'
+              // value={payDate}
               value={!edited ? '' : edited.payDate}
               module='contribution'
               required
@@ -203,7 +243,7 @@ class ContributionMasterPanel extends FormPanel {
               withNull={false}
               required
               readOnly={readOnly}
-              value={!edited ? '' : edited.payType}
+              value={!edited ? '' : 'edited.payType'}
               onChange={(c) => this.updateAttribute('payType', c)}
             />
           </Grid>
@@ -223,12 +263,12 @@ class ContributionMasterPanel extends FormPanel {
               action={validateReceipt}
               clearAction={clearReceiptValidation}
               setValidAction={setReceiptValid}
-              codeTakenLabel={formatMessageWithValues(
-                intl,
-                'contribution',
-                'alreadyUsed',
-                { productCode }
-              )}
+              // codeTakenLabel={formatMessageWithValues(
+              //   intl,
+              //   'contribution',
+              //   'alreadyUsed',
+              //   { productCode }
+              // )|| `Receipt already in use for product ${productCode}`}
               isValid={isReceiptValid}
               isValidating={isReceiptValidating}
               itemQueryIdentifier='code'
@@ -240,14 +280,18 @@ class ContributionMasterPanel extends FormPanel {
               additionalQueryArgs={{ policyUuid: edited?.policy?.uuid }}
               shouldValidate={this.shouldValidate}
               validationError={receiptValidationError}
-              value={edited?.receipt ?? ''}
+              // value={edited?.receipt ?? ''}
+              // value={edited?.receiptNumber ?? ''}
+              value={receiptNumber}
+              // value={!!edited && edited.receiptNumber ? edited.receiptNumber : ""}
             />
           </Grid>
           <Grid item xs={3} className={classes.item}>
             <AmountInput
               module='contribution'
               label='contribution.amount'
-              required
+              required = {true}
+              // readOnly={true}
               readOnly={
                 readOnly ||
                 maxInstallments === 0 ||
@@ -257,6 +301,7 @@ class ContributionMasterPanel extends FormPanel {
                   contributionTotalCount === maxInstallments - 1)
               }
               value={edited.amount}
+              // value = {0} //USE ZERO AS DEFAULT AND READONLY
               max={
                 !edited.id &&
                 edited?.amount >
@@ -285,7 +330,7 @@ class ContributionMasterPanel extends FormPanel {
               module='policy'
               label='policies.balance'
               readOnly={true}
-              value={balance || 0}
+              value={balance ||0}
               displayZero={true}
             />
           </Grid>
